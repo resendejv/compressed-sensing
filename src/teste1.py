@@ -3,12 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.fft
 
-# Carrega o Google Drive
-#drive.mount('/content/drive')
-#file_path = '/content/drive/MyDrive/Colab Notebooks/SA_Step_Input_matlab.csv'
-
 # Lê o arquivo usando Pandas
-df = pd.read_csv("SA_Step_Input_matlab.csv", comment='%',header=None)
+df = pd.read_csv("./data/SA_Step_Input_matlab.csv", comment='%',header=None)
 primeiras_cols = ['Vr', 'Fy', 'SA']
 num_total_aceleracoes = df.shape[1] - len(primeiras_cols)
 num_acc_cols_por_eixo = 140
@@ -31,7 +27,7 @@ print(df.columns[[0, 1, 2, 3, 4, -2, -1]].tolist()) # Mostra as primeiras e últ
 print(df.columns.tolist())
 
 # --- Seleção e Criação do Eixo de Tempo ---
-# Sinal alvo: accx1 (o primeiro sensor de aceleração)
+# Sinal alvo: accx1 (o primeiro sensor de aceleração)   
 sinal_alvo = df['accx1'].values
 N = len(sinal_alvo)
 Fs = 1000
