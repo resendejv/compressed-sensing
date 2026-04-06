@@ -1,66 +1,60 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy.fft
+from scipy.fftpack import dct, idct
+from sklearn.linear_model import OrthogonalMatchingPursuit
 
-# Lê o arquivo usando Pandas
-df = pd.read_csv("./data/SA_Step_Input_matlab.csv", comment='%',header=None)
-primeiras_cols = ['Vr', 'Fy', 'SA']
-num_total_aceleracoes = df.shape[1] - len(primeiras_cols)
-num_acc_cols_por_eixo = 140
+# 1. Carregar os dados
+df = pd.read_csv('./data/SA_Step_Input_matlab.csv')
 
+# Pegando a PRIMEIRA linha e extraindo apenas os 140 pontos do eixo X (accx)
+accx_cols = [f'accx{i}' for i in range(1, 141)]
+x_original = df.loc[0, accx_cols].values.astype(float)
+N = len(x_original) # N = 140
 
-# Cria as listas de nomes (accx0 a accx140, accy0 a accy140, etc.)
-accx_names = [f'accx{i}' for i in range(num_acc_cols_por_eixo)]
-accy_names = [f'accy{i}' for i in range(num_acc_cols_por_eixo)]
-accz_names = [f'accz{i}' for i in range(num_acc_cols_por_eixo)]
+# 2. Criar a subamostragem (Matriz de Medição Phi)
+# Vamos amostrar apenas 50% do sinal original
+M = int(0.5 * N)
 
-# A lista final de nomes de colunas
-col_names = primeiras_cols + accx_names + accy_names + accz_names
+# Escolhendo índices aleatórios para as "medições"
+np.random.seed(101) # Para reprodutibilidade
+indices_amostrados = np.random.choice(N, M, replace=False)
+indices_amostrados.sort()
 
-# Corta a lista de nomes para o tamanho real do DataFrame, se necessário
-df.columns = col_names[:df.shape[1]]
+# Criando o vetor de medições (y)
+y = x_original[indices_amostrados]
 
-print(f"Dimensões (Amostras, Variáveis): {df.shape}")
-print(f"Colunas de aceleração identificadas por eixo: {num_acc_cols_por_eixo}")
-print(df.columns[[0, 1, 2, 3, 4, -2, -1]].tolist()) # Mostra as primeiras e últimas para checagem
-print(df.columns.tolist())
+# Matriz de medição Phi (M x N) - Identidade com linhas deletadas
+Phi = np.eye(N)[indices_amostrados, :]
 
-# --- Seleção e Criação do Eixo de Tempo ---
-# Sinal alvo: accx1 (o primeiro sensor de aceleração)   
-sinal_alvo = df['accx1'].values
-N = len(sinal_alvo)
-Fs = 1000
-tempo = np.arange(N) / Fs
+# 3. Base de Esparsidade (Psi) - Usando DCT
+# A matriz Psi converte do domínio da frequência para o tempo
+Psi = idct(np.eye(N), norm='ortho', axis=0)
 
-# --- Plotagem no Domínio do Tempo (Análise da Resposta Degrau) ---
-plt.figure(figsize=(12, 10))
+# A matriz Theta é a combinação da Medição com a Base de Esparsidade (Theta = Phi * Psi)
+Theta = np.dot(Phi, Psi)
 
-# Plotagem do Sinal no Tempo
-plt.subplot(2, 1, 1)
-plt.plot(tempo, sinal_alvo)
-plt.title(f'Sinal de Aceleração (accx1) - Teste Step Input ({N} Amostras)')
-plt.xlabel('Tempo (s)')
-plt.ylabel('Aceleração')
+# 4. Reconstrução usando OMP (Orthogonal Matching Pursuit)
+# Queremos encontrar o vetor esparso 's' tal que y = Theta * s
+omp = OrthogonalMatchingPursuit(n_nonzero_coefs=int(M/2)) # Estimativa de coeficientes não nulos
+omp.fit(Theta, y)
+s_reconstruido = omp.coef_
+
+# 5. Voltar para o domínio do tempo
+x_reconstruido = np.dot(Psi, s_reconstruido)
+
+# 6. Visualização dos Resultados
+plt.figure(figsize=(10, 6))
+plt.plot(x_original, label='Sinal Original (140 pontos)', color='blue', linewidth=2)
+plt.scatter(indices_amostrados, y, color='red', label=f'Medições ({M} pontos)', zorder=5)
+plt.plot(x_reconstruido, label='Sinal Reconstruído via CS', color='green', linestyle='dashed', linewidth=2)
+plt.title("Compressed Sensing no Sinal de Aceleração (Eixo X) do Pneu")
+plt.xlabel("Índice da Amostra")
+plt.ylabel("Aceleração")
+plt.legend()
 plt.grid(True)
-
-# --- Análise de Esparsidade: Transformada Rápida de Fourier (FFT) ---
-
-# Calcula a FFT (Transformada de Fourier)
-sinal_fft = scipy.fft.fft(sinal_alvo)
-sinal_fft_abs = np.abs(sinal_fft)
-
-# Frequências: só precisamos da primeira metade (Frequência de Nyquist)
-frequencias = scipy.fft.fftfreq(N, 1/Fs)[:N//2]
-magnitudes = sinal_fft_abs[:N//2] / N # Normaliza a magnitude
-
-# Plotagem do Sinal no Domínio da Frequência
-plt.subplot(2, 1, 2)
-# Focamos nas 1000 primeiras frequências para visualizar melhor a esparsidade
-plt.plot(frequencias[:1000], magnitudes[:1000])
-plt.title('Espectro de Magnitude da FFT (Domínio de Esparsidade Candidato)')
-plt.xlabel('Frequência (Hz)')
-plt.ylabel('Magnitude Normalizada')
-plt.grid(True)
-plt.tight_layout()
 plt.show()
+
+# Cálculo do Erro
+erro_mse = np.mean((x_original - x_reconstruido)**2)
+print(f"Erro Quadrático Médio (MSE) da Reconstrução: {erro_mse:.4f}")
