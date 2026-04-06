@@ -6,16 +6,14 @@ import matplotlib.pyplot as plt
 df = pd.read_csv('./data/SA_Step_Input_matlab.csv')
 
 # Tratamento rápido: O Matlab costuma colocar um '%' no primeiro cabeçalho.
-# Vamos renomear a primeira coluna para garantir que se chame 'Vr'
 df.rename(columns={df.columns[0]: 'Vr'}, inplace=True)
 df['Vr'] = df['Vr'].astype(str).str.replace('%', '').astype(float) # Limpa caso o % esteja nos dados
 
-# 2. Criar o eixo X real (de 35° até -35°)
-# np.linspace divide o intervalo em 140 pontos iguais
+# 2. Criar o eixo X real (de 35° até -35°) dividindo em 140 pontos iguais
 angulos = np.linspace(35, -35, 140)
 
 # 3. Filtrar as linhas pelas velocidades (Vr = 30 e Vr = 60)
-# Vamos pegar o primeiro índice (linha) que atenda a cada condição
+# Pega o primeiro índice (linha) que atenda a cada condição
 try:
     idx_v30 = df[df['Vr'] <= 30.1].index[0]
     idx_v60 = df[df['Vr'] >= 59.9].index[0]
