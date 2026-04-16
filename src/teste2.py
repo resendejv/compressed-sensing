@@ -1,3 +1,4 @@
+# Plot do sinal accx do pneu (30km/h vs 60km/h)
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt

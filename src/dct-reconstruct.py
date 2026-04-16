@@ -1,3 +1,7 @@
+# Código para reconstrução de sinais usando DCT, OMP e análise de erro.
+# Comparando diferentes percentuais de amostragem.
+# O sinal accz é o mais promissor para reconstrução.
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -84,3 +88,4 @@ axs[1].grid(True, linestyle='--', alpha=0.7)
 
 plt.tight_layout()
 plt.show()
+print(erros_mse)

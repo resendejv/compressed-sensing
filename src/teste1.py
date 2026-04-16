@@ -7,9 +7,9 @@ from sklearn.linear_model import OrthogonalMatchingPursuit
 # 1. Carregar os dados
 df = pd.read_csv('./data/SA_Step_Input_matlab.csv')
 
-# Pegando a PRIMEIRA linha e extraindo apenas os 140 pontos do eixo X (accx)
-accx_cols = [f'accx{i}' for i in range(1, 141)]
-x_original = df.loc[0, accx_cols].values.astype(float)
+# Pegando a PRIMEIRA linha e extraindo apenas os 140 pontos do eixo Z (accz)
+accz_cols = [f'accz{i}' for i in range(1, 141)]
+x_original = df.loc[0, accz_cols].values.astype(float)
 N = len(x_original) # N = 140
 
 # 2. Criar a subamostragem (Matriz de Medição Phi)
@@ -41,14 +41,14 @@ omp.fit(Theta, y)
 s_reconstruido = omp.coef_
 
 # 5. Voltar para o domínio do tempo
-x_reconstruido = np.dot(Psi, s_reconstruido)
+z_reconstruido = np.dot(Psi, s_reconstruido)
 
 # 6. Visualização dos Resultados
 plt.figure(figsize=(10, 6))
 plt.plot(x_original, label='Sinal Original (140 pontos)', color='blue', linewidth=2)
 plt.scatter(indices_amostrados, y, color='red', label=f'Medições ({M} pontos)', zorder=5)
-plt.plot(x_reconstruido, label=f'Sinal Reconstruído via CS ({int((M/N)*100)}%)', color='green', linestyle='dashed', linewidth=2)
-plt.title("Compressed Sensing no Sinal de Aceleração (Eixo X) do Pneu")
+plt.plot(z_reconstruido, label=f'Sinal Reconstruído via CS ({int((M/N)*100)}%)', color='green', linestyle='dashed', linewidth=2)
+plt.title("Compressed Sensing no Sinal de Aceleração (Eixo Z) do Pneu")
 plt.xlabel("Índice da Amostra")
 plt.ylabel("Aceleração")
 plt.legend()
@@ -56,5 +56,5 @@ plt.grid(True)
 plt.show()
 
 # Cálculo do Erro
-erro_mse = np.mean((x_original - x_reconstruido)**2)
+erro_mse = np.mean((x_original - z_reconstruido)**2)
 print(f"Erro Quadrático Médio (MSE) da Reconstrução: {erro_mse:.4f}")

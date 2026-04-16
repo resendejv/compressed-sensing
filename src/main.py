@@ -1,3 +1,4 @@
+# Código "main" não está sendo utilizado ainda, mas será usado para organizar o projeto
 import os
 
 def setup_project_structure():
