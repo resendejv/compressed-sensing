@@ -11,7 +11,7 @@ if df['Vr'].dtype == object:
     df['Vr'] = df['Vr'].astype(str).str.replace('%', '').astype(float)
 
 # 2. Selecionar um conjunto de dados para a estatística
-# Pegando todas as linhas com velocidade ao redor de 60 km/h. 
+# Pegando todas as linhas com velocidade ao redor de 30 km/h. 
 df_subset = df[df['Vr'] <= 30.1].head(500)
 cols_accz = [f'accz{i}' for i in range(1, 141)]
 N = 140 # Tamanho do sinal
@@ -22,7 +22,7 @@ mse_por_taxa = [] # Vai armazenar uma lista de MSEs para cada taxa de compressã
 sinais_reconstruidos = {} # Para plotar um exemplo visual no 2º gráfico
 
 # Pegamos a primeira linha do subset apenas para servir de exemplo visual no gráfico da direita
-ref_idx = df_subset.index[100] 
+ref_idx = df_subset.index[5] 
 x_ref_original = df_subset.loc[ref_idx, cols_accz].values.astype(float)
 
 # Matriz de Esparsidade Psi (DCT Inversa)
@@ -55,8 +55,8 @@ for p in percentuais:
         x_reconstruido = np.dot(Psi, s_reconstruido)
         
         # Cálculo do MSE para esta linha específica
-        mse = np.mean((x_original - x_reconstruido)**2)
-        mses_desta_taxa.append(mse)
+        rmse = np.sqrt(np.mean((x_original - x_reconstruido)**2))
+        mses_desta_taxa.append(rmse)
         
         # Se for a nossa linha de referência, salvamos para o gráfico visual
         if idx == ref_idx and round(p, 2) in [0.3, 0.5, 0.8]:
@@ -66,18 +66,18 @@ for p in percentuais:
     mse_por_taxa.append(mses_desta_taxa)
 
 # 5. Plotagem dos Resultados
-fig, axs = plt.subplots(1, 2, figsize=(16, 6))
+fig, axs = plt.subplots(1, 2, figsize=(12, 6))
 
 # Gráfico 1: Boxplot da Variância do Erro
 # Multiplicamos as posições por 100 para ficar no eixo X como porcentagem
 posicoes_x = percentuais * 100 
 axs[0].boxplot(mse_por_taxa, positions=posicoes_x, widths=2, patch_artist=True,
-               boxprops=dict(facecolor='lightblue', color='blue'),
-               medianprops=dict(color='red', linewidth=2))
+               boxprops=dict(facecolor='lightblue', color='darkblue'),
+               medianprops=dict(color='darkblue', linewidth=2))
 
-axs[0].set_title('Distribuição do Erro (MSE) vs. Taxa de Amostragem', fontweight='bold')
+axs[0].set_title('Distribuição do Erro (RMSE) vs. Taxa de Amostragem', fontweight='bold')
 axs[0].set_xlabel('Amostras Retidas do Sinal Original (%)')
-axs[0].set_ylabel('Erro Quadrático Médio (MSE)')
+axs[0].set_ylabel('Erro Quadrático Médio (RMSE)')
 axs[0].set_xticks(posicoes_x)
 axs[0].set_xticklabels([f"{int(x)}%" for x in posicoes_x])
 axs[0].grid(True, linestyle='--', alpha=0.5)
@@ -86,17 +86,19 @@ axs[0].grid(True, linestyle='--', alpha=0.5)
 angulos = np.linspace(35, -35, 140)
 axs[1].plot(angulos, x_ref_original, label='Original (100%)', color='black', linewidth=2, zorder=5)
 
-cores = {0.3: 'red', 0.5: 'orange', 0.8: 'green'}
+cores = {0.3: 'lightblue', 0.5: 'blue', 0.8: 'darkblue'}
 for p_chave, x_rec in sinais_reconstruidos.items():
     axs[1].plot(angulos, x_rec, label=f'Reconstruído ({int(p_chave*100)}%)', 
                 color=cores[p_chave], linestyle='dashed', alpha=0.8)
 
 axs[1].invert_xaxis()
-axs[1].set_title(f'Visualização da Reconstrução (Linha Ref: {ref_idx})', fontweight='bold')
+axs[1].set_title('Visualização da Reconstrução - 30 km/h', fontweight='bold')
 axs[1].set_xlabel('Ângulo de Rotação (°)')
 axs[1].set_ylabel('Aceleração Radial (accz)')
 axs[1].legend()
 axs[1].grid(True, linestyle='--', alpha=0.7)
 
+plt.rcParams.update({'font.size': 14})
+plt.savefig('./results/dct-30kmh.pdf', dpi=300)
 plt.tight_layout()
 plt.show()

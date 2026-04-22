@@ -53,6 +53,9 @@ plt.xlabel("Índice da Amostra")
 plt.ylabel("Aceleração")
 plt.legend()
 plt.grid(True)
+
+plt.rcParams.update({'font.size': 14})
+plt.savefig('./results/reconstruction-z.pdf', dpi=300)
 plt.show()
 
 # Cálculo do Erro

@@ -58,5 +58,7 @@ axs[-1].set_xlabel("Ângulo de Rotação (°)", fontsize=12)
 plt.gca().invert_xaxis()
 
 # Ajustar o espaçamento entre os gráficos
+plt.rcParams.update({'font.size': 14})
+plt.savefig('./results/visualization.pdf', dpi=300)
 plt.tight_layout()
 plt.show()

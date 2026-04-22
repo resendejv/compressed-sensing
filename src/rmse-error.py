@@ -93,6 +93,7 @@ for ax in axs:
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax.set_xticklabels([f"{int(x)}" for x in ax.get_xticks()])
 
+plt.savefig('./results/rmse-error.pdf', dpi=300)
 plt.tight_layout()
 plt.show()
 
